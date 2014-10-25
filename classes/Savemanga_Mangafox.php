@@ -31,7 +31,7 @@ class Savemanga_Mangafox extends Savemanga {
             $patternImage = $this->_pattern . $auxId;
 
 
-            $this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
+            $this->write("<br/><strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
             libxml_use_internal_errors(true);
             $dom = DOMDocument::loadHTML($pageContent);
             libxml_clear_errors();
@@ -46,7 +46,7 @@ class Savemanga_Mangafox extends Savemanga {
             ksort($links);
             $links = array_unique($links);
             array_pop($links);
-            $this->write($this->_messages['searching']);
+            $this->write("<br/>".$this->_messages['searching']);
             foreach ($links as $k => $url) {
                 /* GETTING IMAGE URLS */
                 $url = $this->file_get_contents_curl($url);
@@ -61,7 +61,7 @@ class Savemanga_Mangafox extends Savemanga {
             }
            
             $this->write("[" . count($imgs) . "]");
-            $this->write($this->_messages['saving']);
+            $this->write("<br/>".$this->_messages['saving']);
             
             $this->images = $imgs;
             $this->saveImages();
