@@ -7,11 +7,9 @@
  * @author     Rubén Monge <rubenmonge@gmail.com>
  * @copyright  Copyright (c) 2011-2012 Rubén Monge. (http://www.rubenmonge.es/)
  */
-class Savemanga_Factory
-{
+class Savemanga_Factory {
 
-    static public function getInstanceOf($url)
-    {
+    static public function getInstanceOf($url) {
         $domain = str_ireplace('www.', '', parse_url($url, PHP_URL_HOST));
         switch ($domain) {
             case 'mangareader.net':
@@ -28,9 +26,13 @@ class Savemanga_Factory
             case 'batoto.net':
                 $object = new Savemanga_Batoto();
                 break;
-            
+
             case 'jesulink.com':
                 $object = new Savemanga_Jesulink();
+                break;
+            
+            case 'mangafox.me':
+                $object = new Savemanga_Mangafox();
                 break;
         }
 

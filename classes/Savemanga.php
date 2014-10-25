@@ -57,6 +57,7 @@ abstract class Savemanga
     {
         echo $text;
         flush();
+        ob_flush();
     }
 
 }
