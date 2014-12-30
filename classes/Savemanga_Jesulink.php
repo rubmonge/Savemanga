@@ -41,7 +41,6 @@ class Savemanga_Jesulink extends Savemanga
             $options = $xp->query('//select[@id="list"]/option');            
             foreach ($options as $option) {
                 $value = $option->getAttribute('value');
-
                 $links[] = $patternImage."/". $value;
             }
 
@@ -51,17 +50,15 @@ class Savemanga_Jesulink extends Savemanga
             $this->write($this->_messages['searching']);
             foreach ($links as $k => $url) {
                 /* GETTING IMAGE URLS */
-                $url       = $this->file_get_contents_curl($url);
-                $imgpatter = "/<img id=\"pagina\" (.*)/";
-                preg_match_all($imgpatter, $url, $matches);
+                $url       = $this->file_get_contents_curl($url);                
+                $imgpatter = "/<img id='pagina' (.*)/";
+                preg_match_all($imgpatter, $url, $matches);               
                 
-                $thing     = explode("src", $matches[0][0]);
-                $parts     = explode("\"", $thing[1]);
-                
-                $imgs[$k]  = $this->_domain.$parts[1];
+                $thing     = explode("'", $matches[0][0]);                               
+                $imgs[$k]  = $this->_pattern.$this->id."/".$thing[3];
                 $this->write($this->_messages['processing']);
             }            
-
+            
             $this->write("[" . count($imgs) . "]");
             $this->write($this->_messages['saving']);
             $this->images = $imgs;
@@ -78,7 +75,8 @@ class Savemanga_Jesulink extends Savemanga
     {
 
         $aux      = str_replace($this->_pattern, "", $url);
-        $this->id = $aux;
+        $aux = explode("/", $aux);
+        $this->id = $aux[0]."/".$aux[1];
     }
 
     protected function setMangaNameAndEp($id)
@@ -100,9 +98,7 @@ class Savemanga_Jesulink extends Savemanga
             $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
             return true;
         }
-        return false;
-
-        return false;
+        return false;        
     }
 
     public function getSavedMangas()
