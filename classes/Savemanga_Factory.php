@@ -30,9 +30,28 @@ class Savemanga_Factory {
             case 'jesulink.com':
                 $object = new Savemanga_Jesulink();
                 break;
-            
+
             case 'mangafox.me':
                 $object = new Savemanga_Mangafox();
+                break;
+
+            case 'submanga.com':
+                $object = new Savemanga_Submanga();
+                break;
+
+            case 'tumangaonline.com':
+                $object = new Savemanga_Tumangaonline();
+                break;
+
+            case 'soulmanga.net':
+                $object = new Savemanga_Soulmanga();
+                break;
+            case 'sekaimanga.net':
+                $object = new Savemanga_Sekaimanga();
+                break;
+            
+            case 'reader.jokerfansub.com':
+                $object = new Savemanga_Jokerfansub();
                 break;
         }
 

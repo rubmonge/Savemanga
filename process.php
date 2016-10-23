@@ -4,9 +4,14 @@ require 'classes/Savemanga_Factory.php';
 require 'classes/Savemanga_Mangareader.php';
 require 'classes/Savemanga_Mangapanda.php';
 require 'classes/Savemanga_Narutouchiha.php';
+require 'classes/Savemanga_Mangafox.php';
 require 'classes/Savemanga_Batoto.php';
 require 'classes/Savemanga_Jesulink.php';
-require 'classes/Savemanga_Mangafox.php';
+require 'classes/Savemanga_Jokerfansub.php';
+require 'classes/Savemanga_Submanga.php';
+require 'classes/Savemanga_Soulmanga.php';
+require 'classes/Savemanga_Sekaimanga.php';
+require 'classes/Savemanga_Tumangaonline.php';
 
 header('Content-Type: text/html; charset=utf-8');
 $htmlCode = "<style>"
