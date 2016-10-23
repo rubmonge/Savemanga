@@ -14,12 +14,12 @@ abstract class Savemanga {
     protected $id;
     protected $manga_ep;
     protected $manga_name;
-    protected $images = array();
+    protected $images    = array();
     protected $_messages = array(
-        "searching" => "\nSearching:",
-        "saving" => "\nSaving:",
-        "processing" => "[]",
-        "overwritting" => "[!]",
+        "searching"     => "\nSearching:",
+        "saving"        => "\nSaving:",
+        "processing"    => "[]",
+        "overwritting"  => "[!]",
         "connect_error" => "\nUnable to connect to:"
     );
 
@@ -39,7 +39,7 @@ abstract class Savemanga {
 
     abstract protected function zipManga();
 
-    public function file_get_contents_curl($url, $referer = null) {
+    public function file_get_contents_curl($url, $referer = null, $compress = null) {
         /*
           $ch = curl_init();
           curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -61,6 +61,9 @@ abstract class Savemanga {
         //If referer not null.
         if ($referer !== null) {
             curl_setopt($ch, CURLOPT_REFERER, $referer);
+        }
+        if ($compress !== null) {
+            curl_setopt($ch, CURLOPT_ENCODING, "gzip");
         }
         $data = curl_exec($ch);
         curl_close($ch);

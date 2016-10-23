@@ -16,40 +16,41 @@ class Savemanga_Mangafox extends Savemanga {
      */
 
     protected $_pattern = "http://mangafox.me/manga/";
-    protected $_domain = "http://mangafox.me";
+    protected $_domain  = "http://mangafox.me";
 
     public function getManga($url) {
-        $pageContent = $this->file_get_contents_curl($url);
+        $pageContent = $this->file_get_contents_curl($url, null, true);
 
         if (strlen($pageContent)) {
 
             $this->setMangaID($url);
             $this->setMangaNameAndEp($this->id);
 
-            $auxId = explode('/', $this->id);
-            $auxId = $auxId[0] . "/" . $auxId[1] . "/" . $auxId[2];
+            $auxId        = explode('/', $this->id);
+            $auxId        = $auxId[0] . "/" . $auxId[1] . "/" . $auxId[2];
             $patternImage = $this->_pattern . $auxId;
 
 
             $this->write("<br/><strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
             libxml_use_internal_errors(true);
-            $dom = DOMDocument::loadHTML($pageContent);
+            $dom     = DOMDocument::loadHTML($pageContent);
             libxml_clear_errors();
-            $xp = new DOMXPath($dom);
+            $xp      = new DOMXPath($dom);
             $options = $xp->query('//select[@class="m"]/option');
 
             foreach ($options as $option) {
-                $value = $option->getAttribute('value');
+                $value   = $option->getAttribute('value');
                 $links[] = $patternImage . "/" . $value . ".html";
             }
 
             ksort($links);
             $links = array_unique($links);
             array_pop($links);
-            $this->write("<br/>".$this->_messages['searching']);
+            $this->write("<br/>" . $this->_messages['searching']);
+            $iUrl  = $url;
             foreach ($links as $k => $url) {
                 /* GETTING IMAGE URLS */
-                $url = $this->file_get_contents_curl($url);
+                $url       = $this->file_get_contents_curl($url, $url, true);
                 $imgpatter = "/<img (.*) id=\"image\" (.*)/";
                 preg_match_all($imgpatter, $url, $matches);
 
@@ -59,10 +60,10 @@ class Savemanga_Mangafox extends Savemanga {
                 $imgs[$k] = $parts[1];
                 $this->write($this->_messages['processing']);
             }
-           
+
             $this->write("[" . count($imgs) . "]");
-            $this->write("<br/>".$this->_messages['saving']);
-            
+            $this->write("<br/>" . $this->_messages['saving']);
+
             $this->images = $imgs;
             $this->saveImages();
             $this->write("[" . count($imgs) . "]");
@@ -74,16 +75,16 @@ class Savemanga_Mangafox extends Savemanga {
     }
 
     public function setMangaID($url) {
-        $aux = str_replace("http://mangafox.me/manga/", "", $url);
+        $aux      = str_replace("http://mangafox.me/manga/", "", $url);
         $this->id = $aux;
     }
 
     final protected function setMangaNameAndEp($id) {
 
         if (strlen(trim($id))) {
-            $aux = explode("/", $id);
-            $name = trim($aux[0]);
-            $name = str_replace(" ", "_", ucwords(strtolower(str_replace("_", " ", $name))));
+            $aux              = explode("/", $id);
+            $name             = trim($aux[0]);
+            $name             = str_replace(" ", "_", ucwords(strtolower(str_replace("_", " ", $name))));
             $this->manga_name = $name;
 
 
@@ -105,11 +106,11 @@ class Savemanga_Mangafox extends Savemanga {
 
         if (is_array($files) && count($files)) {
             foreach ($files as $k => $file) {
-                $manga_name = explode("/", $file);
-                $name = array_pop($manga_name);
-                $key = explode("_", $name);
+                $manga_name                                   = explode("/", $file);
+                $name                                         = array_pop($manga_name);
+                $key                                          = explode("_", $name);
                 $aMangas[$key[0] . "_" . $key[1]][$k]['name'] = $name;
-                $aMangas[$key[0] . "_" . $key[1]][$k]['url'] = $file;
+                $aMangas[$key[0] . "_" . $key[1]][$k]['url']  = $file;
             }
             ksort($aMangas);
         }
@@ -119,7 +120,7 @@ class Savemanga_Mangafox extends Savemanga {
     final protected function zipManga() {
         $dest_zip_file = $this->path . $this->manga_ep . ".zip";
         file_put_contents($dest_zip_file, "");
-        $zip = new ZipArchive;
+        $zip           = new ZipArchive;
         if ($zip->open($dest_zip_file) === TRUE) {
             foreach (glob($this->path . "*.jpg") as $filename) {
                 $destfile = array_pop(explode("/", $filename));
@@ -158,7 +159,7 @@ class Savemanga_Mangafox extends Savemanga {
             foreach ($this->images as $k => $imagen) {
                 set_time_limit(0);
 
-                $page = ($k < 10) ? "0" . $k : $k;
+                $page    = ($k < 10) ? "0" . $k : $k;
                 $destino = $this->path . $page . ".jpg";
                 if (!$this->saveImage($imagen, $destino)) {
                     $this->write("<br/>Petada al guardar la imagen: " . $imagen);
@@ -176,7 +177,7 @@ class Savemanga_Mangafox extends Savemanga {
         }
     }
 
-    final protected function saveImage($url, $destino) {       
+    final protected function saveImage($url, $destino) {
         if (!file_exists($destino)) {
             set_time_limit(0);
             $actual = $this->file_get_contents_curl($url);
