@@ -15,7 +15,7 @@
 
             <div class="row">
                 <div class="col-md-12">
-                    <p>Webs suported: mangareader.net, mangapanda.com, batoto, jesulink, mangafox, jockerfansub</p>
+                    <p>Webs suported: mangareader.net, mangapanda.com, batoto, jesulink, mangafox, jockerfansub, otakusmash, readcomics.io</p>
             
                     <form method="post" action="process.php" target="process" role="form" class="row">
                         <div class="col-md-10">

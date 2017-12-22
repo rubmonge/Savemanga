@@ -7,29 +7,30 @@
  * @author     Rubén Monge <rubenmonge@gmail.com>
  * @copyright  Copyright (c) 2011-2012 Rubén Monge. (http://www.rubenmonge.es/)
  */
-class Savemanga_Mangafox extends Savemanga {
+class Savemanga_Mangafox extends Savemanga
+{
     /*
-     * pattern manga: http://www.mangafox.me/one-piece/709/2 : 
+     * pattern manga: https://www.mangafox.la/one-piece/709/2 : 
      * Where "one-piece" == manga identifier (id)
      * "108" = episode
      * "2" = page
      */
 
-    protected $_pattern = "http://mangafox.me/manga/";
-    protected $_domain  = "http://mangafox.me";
+    protected $_pattern = "https://mangafox.la/manga/";
+    protected $_domain  = "https://mangafox.la";
 
-    public function getManga($url) {
-        $pageContent = $this->file_get_contents_curl($url, null, true);
+    public function getManga($url)
+    {
+        $pageContent = $this->file_get_contents_curl($url, $this->_domain, true);
 
         if (strlen($pageContent)) {
 
             $this->setMangaID($url);
             $this->setMangaNameAndEp($this->id);
 
-            $auxId        = explode('/', $this->id);
-            $auxId        = $auxId[0] . "/" . $auxId[1] . "/" . $auxId[2];
-            $patternImage = $this->_pattern . $auxId;
-
+            $auxId        = explode('/', $url);
+            array_pop($auxId);
+            $patternImage = implode("/", $auxId);
 
             $this->write("<br/><strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
             libxml_use_internal_errors(true);
@@ -42,7 +43,6 @@ class Savemanga_Mangafox extends Savemanga {
                 $value   = $option->getAttribute('value');
                 $links[] = $patternImage . "/" . $value . ".html";
             }
-
             ksort($links);
             $links = array_unique($links);
             array_pop($links);
@@ -50,17 +50,17 @@ class Savemanga_Mangafox extends Savemanga {
             $iUrl  = $url;
             foreach ($links as $k => $url) {
                 /* GETTING IMAGE URLS */
-                $url       = $this->file_get_contents_curl($url, $url, true);
-                $imgpatter = "/<img (.*) id=\"image\" (.*)/";
-                preg_match_all($imgpatter, $url, $matches);
+                $url = $this->file_get_contents_curl($url, $iUrl, true);
 
-                $thing = explode("src", $matches[0][0]);
-                $parts = explode("\"", $thing[1]);
+                libxml_use_internal_errors(true);
+                $dom = DOMDocument::loadHTML($url);
+                libxml_clear_errors();
+                $xp  = new DOMXPath($dom);
+                $img = $xp->query('//img[@id="image"]');
 
-                $imgs[$k] = $parts[1];
+                $imgs[$k] = $img[0]->getAttribute('src');
                 $this->write($this->_messages['processing']);
             }
-
             $this->write("[" . count($imgs) . "]");
             $this->write("<br/>" . $this->_messages['saving']);
 
@@ -74,34 +74,37 @@ class Savemanga_Mangafox extends Savemanga {
         return false;
     }
 
-    public function setMangaID($url) {
-        $aux      = str_replace("http://mangafox.me/manga/", "", $url);
+    public function setMangaID($url)
+    {
+        $aux      = str_replace("https://mangafox.la/manga/", "", $url);
         $this->id = $aux;
     }
 
-    final protected function setMangaNameAndEp($id) {
-
+    final protected function setMangaNameAndEp($id)
+    {
         if (strlen(trim($id))) {
             $aux              = explode("/", $id);
-            $name             = trim($aux[0]);
+            $name             = trim($aux[4]);
             $name             = str_replace(" ", "_", ucwords(strtolower(str_replace("_", " ", $name))));
             $this->manga_name = $name;
 
+            $this->manga_ep = str_replace("c", "", $aux[5]);
 
-            $this->manga_ep = intval(str_replace("c", "", $aux[2]));
-
-            if ($this->manga_ep < 10) {
-                $this->manga_ep = "00" . $this->manga_ep;
-            } else if ($this->manga_ep < 100) {
-                $this->manga_ep = "0" . $this->manga_ep;
+            $volAux = explode("/v", $id);
+            if (count($volAux) > 1) {
+                $volAux         = explode("/", $volAux[1]);
+                $this->manga_ep = $volAux[0] . "_" . $this->manga_ep;
             }
+
             $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
+
             return true;
         }
         return false;
     }
 
-    public function getSavedMangas() {
+    public function getSavedMangas()
+    {
         $files = array_reverse(glob($this->path . "*/*.cbr", GLOB_MARK));
 
         if (is_array($files) && count($files)) {
@@ -117,7 +120,8 @@ class Savemanga_Mangafox extends Savemanga {
         return (isset($aMangas)) ? $aMangas : false;
     }
 
-    final protected function zipManga() {
+    final protected function zipManga()
+    {
         $dest_zip_file = $this->path . $this->manga_ep . ".zip";
         file_put_contents($dest_zip_file, "");
         $zip           = new ZipArchive;
@@ -144,11 +148,13 @@ class Savemanga_Mangafox extends Savemanga {
         }
     }
 
-    public function renameManga() {
+    public function renameManga()
+    {
         return rename($this->path . $this->manga_ep . ".zip", $this->path . $this->file_manga_name);
     }
 
-    final protected function saveImages() {
+    final protected function saveImages()
+    {
 
         $this->path = $this->path . $this->manga_name . "/";
         if (!is_dir($this->path)) {
@@ -172,15 +178,17 @@ class Savemanga_Mangafox extends Savemanga {
             }
             return true;
         } else {
-            $this->write("<br/>No se han encontrado imágenes o mangafox.me ha tardado demasiado en contestar");
+            $this->write("<br/>No se han encontrado imágenes o mangafox.la ha tardado demasiado en contestar");
             return false;
         }
     }
 
-    final protected function saveImage($url, $destino) {
+    final protected function saveImage($url, $destino)
+    {
         if (!file_exists($destino)) {
             set_time_limit(0);
-            $actual = $this->file_get_contents_curl($url);
+            $actual = $this->file_get_contents_curl($url, null, true);
+
             if (strlen(trim($actual))) {
                 file_put_contents($destino, $actual);
                 $this->write($this->_messages['processing']);
@@ -191,5 +199,4 @@ class Savemanga_Mangafox extends Savemanga {
         $this->write($this->_messages['overwritting']);
         return true;
     }
-
 }

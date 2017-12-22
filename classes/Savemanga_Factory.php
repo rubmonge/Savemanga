@@ -31,7 +31,7 @@ class Savemanga_Factory {
                 $object = new Savemanga_Jesulink();
                 break;
 
-            case 'mangafox.me':
+            case 'mangafox.la':
                 $object = new Savemanga_Mangafox();
                 break;
 
@@ -52,6 +52,14 @@ class Savemanga_Factory {
             
             case 'reader.jokerfansub.com':
                 $object = new Savemanga_Jokerfansub();
+                break;
+            
+            case 'otakusmash.com':
+                $object = new Savemanga_Otakusmash();
+                break;
+            
+            case 'readcomics.io':
+                $object = new Savemanga_Readcomics();
                 break;
         }
 

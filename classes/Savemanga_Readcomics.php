@@ -3,47 +3,48 @@
 /**
  * Este fichero forma parte de la librería Savemanga
  * @category   Savemanga
- * @package    Savemanga_Jokerfansub
+ * @package    Savemanga_Readcomics
  * @author     Rubén Monge <rubenmonge@gmail.com>
  * @copyright  Copyright (c) 2011-2012 Rubén Monge. (http://www.rubenmonge.es/)
  */
-class Savemanga_Jokerfansub extends Savemanga {
+class Savemanga_Readcomics extends Savemanga {
     /*
-     * pattern manga: http://reader.jokerfansub.com/read/_one_piece/es/91/828/page/37 : 
-     * Where "_one_piece" == manga identifier (id)
-     * "828" = episode
-     * "37" = page
+     * pattern manga: https://readcomics.io/old-man-logan/chapter-30/3 : 
+     * Where "old-man-logan" == manga identifier (id)
+     * "30" = episode
+     * "3" = page
      */
 
-    protected $_pattern = "http://reader.jokerfansub.com/read/";
-    protected $_domain  = "http://reader.jokerfansub.com/";
+    protected $_pattern = "https://readcomics.io/";
+    protected $_domain  = "https://readcomics.io";
 
     public function getManga($url) {
-        $pageContent = $this->file_get_contents_curl($url);
+        $pageContent = $this->file_get_contents_curl($url, $this->_domain, true);
 
         if (strlen($pageContent)) {
 
             $this->setMangaID($url);
             $this->setMangaNameAndEp($this->id);
 
-            $auxId        = explode('/', $this->id);
-            $auxId        = $auxId[0] . "/" . $auxId[1];
-            $patternImage = $this->_pattern . $auxId;
 
+            $patternImage = $this->_pattern . '/' . $this->id;
 
             $this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
+
             libxml_use_internal_errors(true);
             $dom     = DOMDocument::loadHTML($pageContent);
             libxml_clear_errors();
             $xp      = new DOMXPath($dom);
-            $options = $xp->query('//div[@class="tbtitle dropdown_parent dropdown_right"]/ul[@class="dropdown"]/li/a');
+            $options = $xp->query('//select[@name="page_select"]/option');
             foreach ($options as $option) {
-                $value   = $option->getAttribute('href');
-                $links[] = $value;
+                $link    = $option->getAttribute('value');
+                if (strlen(trim($link)))
+                    $links[] = $link;
             }
-
             ksort($links);
             $links = array_unique($links);
+
+
             $this->write($this->_messages['searching']);
             foreach ($links as $k => $url) {
                 $url     = $this->file_get_contents_curl($url);
@@ -51,13 +52,13 @@ class Savemanga_Jokerfansub extends Savemanga {
                 $dom     = DOMDocument::loadHTML($url);
                 libxml_clear_errors();
                 $xp      = new DOMXPath($dom);
-                $options = $xp->query('//img[@class="open"]');
+                $options = $xp->query('//img[@id="main_img"]');
                 foreach ($options as $option) {
                     $imgs[$k] = $option->getAttribute('src');
                 }
                 $this->write($this->_messages['processing']);
             }
-
+            
             $this->write("[" . count($imgs) . "]");
             $this->write($this->_messages['saving']);
             $this->images = $imgs;
@@ -72,23 +73,21 @@ class Savemanga_Jokerfansub extends Savemanga {
 
     public function setMangaID($url) {
 
-        $aux      = str_replace($this->_pattern, "", $url);
-        $aux      = explode("/", $aux);
-        $auxiliar = $aux[0];
-        $auxiliar = trim(str_replace("_", " ", $auxiliar));
-        $auxiliar = ucwords($auxiliar);
-        $auxiliar = str_replace(" ", "_", $auxiliar);
-        $this->id = $auxiliar . "/" . $aux[3];
+        $aux = str_replace($this->_pattern, "", $url);
+        $aux = explode("/", $aux);
+
+        $this->id = $aux[0] . "/" . $aux[1];
     }
 
     protected function setMangaNameAndEp($id) {
 
         if (strlen(trim($id))) {
-            $aux              = explode("/", $id);
+            $aux = explode("/", $id);
+
             $name             = trim($aux[0]);
-            #$name = str_replace(" ", "_", ucwords(strtolower(str_replace("-", " ", $name))));
+            $name             = str_replace(" ", "_", ucwords(strtolower(str_replace("-", " ", $name))));
             $this->manga_name = $name;
-            $this->manga_ep   = isset($aux[1]) ? intval($aux[1]) : 1;
+            $this->manga_ep   = isset($aux[1]) ? intval(str_ireplace('chapter-', '', $aux[1])) : 1;
 
             if ($this->manga_ep < 10) {
                 $this->manga_ep = "00" . $this->manga_ep;
@@ -98,7 +97,6 @@ class Savemanga_Jokerfansub extends Savemanga {
             $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
             return true;
         }
-
         return false;
     }
 
@@ -172,7 +170,7 @@ class Savemanga_Jokerfansub extends Savemanga {
             }
             return true;
         } else {
-            $this->write("<br/>No se han encontrado imágenes o Jokerfansub.com ha tardado demasiado en contestar");
+            $this->write("<br/>No se han encontrado imágenes o Readcomics.io ha tardado demasiado en contestar");
             return false;
         }
     }
@@ -180,6 +178,7 @@ class Savemanga_Jokerfansub extends Savemanga {
     final protected function saveImage($url, $destino) {
         if (!file_exists($destino)) {
             set_time_limit(0);
+
             $actual = $this->file_get_contents_curl($url);
             if (strlen(trim($actual))) {
                 file_put_contents($destino, $actual);

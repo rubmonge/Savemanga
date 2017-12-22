@@ -12,6 +12,8 @@ require 'classes/Savemanga_Submanga.php';
 require 'classes/Savemanga_Soulmanga.php';
 require 'classes/Savemanga_Sekaimanga.php';
 require 'classes/Savemanga_Tumangaonline.php';
+require 'classes/Savemanga_Otakusmash.php';
+require 'classes/Savemanga_Readcomics.php';
 
 header('Content-Type: text/html; charset=utf-8');
 $htmlCode = "<style>"

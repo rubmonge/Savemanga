@@ -54,8 +54,11 @@ abstract class Savemanga {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 5.1; rv:21.0) Gecko/20100101 Firefox/21.0');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36');
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+       
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         //Set curl to return the data instead of printing it to the browser.
         curl_setopt($ch, CURLOPT_URL, $url);
         //If referer not null.
@@ -66,9 +69,10 @@ abstract class Savemanga {
             curl_setopt($ch, CURLOPT_ENCODING, "gzip");
         }
         $data = curl_exec($ch);
+
+        
         curl_close($ch);
-
-
+        $data = preg_replace('#<script(.*?)>(.*?)</script>#is', '', $data);
         return $data;
     }
 
