@@ -1,52 +1,33 @@
 <?php
 
-class Savemanga_Tumangaonline extends Savemanga {
+class Savemanga_Tumangaonline extends Savemanga
+{
     /*
-     * pattern manga: http://www.tumangaonline.com/visor/One%20Piece/45/756/74/3 : 
-     * Where "One%20Piece/45/756/74" == manga identifier (id)     
-     * "3" = page
+     * pattern manga: https://tmofans.com/viewer/5c0a35b83fa33/paginated/2 : 
+     * Where "5c0a35b83fa33" == manga identifier (id)     
+     * "2" = page
      */
 
-    protected $_pattern = "http://www.tumangaonline.com/#!/lector/";
-    protected $_patternImg = "http://img1.tumangaonline.com/subidas/";
-    protected $_domain = "http://www.tumangaonline.com";
+    protected $_pattern    = "https://tmofans.com/viewer/";
+    protected $_patternImg = "https://img1.tmofans.com/uploads/";
+    protected $_domain     = "https://tmofans.com";
 
-    public function getManga($url) {
-        $pageContent = $this->file_get_contents_curl($url);
-var_dump($pageContent);die;
-        if (strlen($pageContent)) {
+    public function getManga($url)
+    {
+        $dom = $this->getDom($url);
 
-            $this->setMangaID($url);
-            $this->setMangaNameAndEp($this->id);
-            $auxId = explode("/", $this->id);
-            array_shift($auxId);
-            $auxId = implode("/", $auxId);
-            $patternImage = $this->_patternImg . $auxId . "/";
 
+        if ($dom) {
+            $this->setMangaNameAndEp($dom);
             $this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
 
-            libxml_use_internal_errors(true);
-            $dom = DOMDocument::loadHTML($pageContent);
-            libxml_clear_errors();
-            $xp = new DOMXPath($dom);
-            $options = $xp->query('//input[@hidden="true"]');
-			
-			
-            foreach ($options as $option) {
-                $value = $option->getAttribute('value');
-				if (strlen(trim($value))>20) {
-					break;
-				}
-            }			
-			
-            $values = explode(";", $value);
-            $imagesNames = explode("%", $values[3]);
-
+            $aux = $dom->query('//img[contains(@class,"viewer-image")]');
+            
             $this->write($this->_messages['searching']);
-            foreach ($imagesNames as $k => $value) {
-                $imgs[$k] = $patternImage . str_replace(" ", "%20", $value);
+            foreach ($aux as $k => $imgUrl) {
+                $imgs[$k] = $imgUrl->getAttribute('src');
                 $this->write($this->_messages['processing']);
-            }			
+            }            
 
             $this->write("[" . count($imgs) . "]");
             $this->write($this->_messages['saving']);
@@ -60,55 +41,53 @@ var_dump($pageContent);die;
         return false;
     }
 
-    public function setMangaID($url) {
-
-        $aux = str_replace($this->_pattern, "", $url);
-        $aux = explode("/", $aux);
-        array_pop($aux);
-        $this->id = implode("/", $aux);
-    }
-
-    protected function setMangaNameAndEp($id) {
-
-        if (strlen(trim($id))) {
-            $aux = explode("/", $id);
-
-            $name = trim($aux[0]);
-            $name = str_replace(" ", "_", ucwords(strtolower(str_replace(array(" ", "%20", "-", "+"), " ", $name))));
-            $this->manga_name = $name;
-            $this->manga_ep = isset($aux[2]) ? floatval($aux[2]) : 1;
-
-            if ($this->manga_ep < 10) {
-                $this->manga_ep = "00" . $this->manga_ep;
-            } else if ($this->manga_ep < 100) {
-                $this->manga_ep = "0" . $this->manga_ep;
-            }
-            $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
-            return true;
-        }
+    protected function setMangaID($url)
+    {
         return false;
     }
 
-    public function getSavedMangas() {
+    protected function setMangaNameAndEp($dom)
+    {
+        $aux              = $dom->query('//h1');
+        $this->manga_name = str_replace([" ",":"], ["_",""], ucwords(trim($aux[0]->nodeValue)));
+
+        $aux            = $dom->query('//h2');
+        $ep             = $aux[0]->nodeValue;
+        $ep             = explode("tulo", $ep);
+        $ep             = explode(":", $ep[1]);
+        $this->manga_ep = trim($ep[0]);
+
+        if ($this->manga_ep < 10) {
+            $this->manga_ep = "00" . $this->manga_ep;
+        } else if ($this->manga_ep < 100) {
+            $this->manga_ep = "0" . $this->manga_ep;
+        }
+        $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
+        return true;
+    }
+
+    public function getSavedMangas()
+    {
         $files = array_reverse(glob($this->path . "*/*.cbr", GLOB_MARK));
 
         if (is_array($files) && count($files)) {
             foreach ($files as $k => $file) {
-                $manga_name = explode("/", $file);
-                $name = array_pop($manga_name);
-                $key = explode("_", $name);
+                $manga_name                                   = explode("/", $file);
+                $name                                         = array_pop($manga_name);
+                $key                                          = explode("_", $name);
                 $aMangas[$key[0] . "_" . $key[1]][$k]['name'] = $name;
-                $aMangas[$key[0] . "_" . $key[1]][$k]['url'] = $file;
+                $aMangas[$key[0] . "_" . $key[1]][$k]['url']  = $file;
             }
             ksort($aMangas);
         }
         return (isset($aMangas)) ? $aMangas : false;
     }
 
-    final protected function zipManga() {
+    final protected function zipManga()
+    {
         $dest_zip_file = $this->path . $this->manga_ep . ".zip";
         file_put_contents($dest_zip_file, "");
-        $zip = new ZipArchive;
+        $zip           = new ZipArchive;
         if ($zip->open($dest_zip_file) === TRUE) {
             foreach (glob($this->path . "*.jpg") as $filename) {
                 $destfile = array_pop(explode("/", $filename));
@@ -132,11 +111,13 @@ var_dump($pageContent);die;
         }
     }
 
-    public function renameManga() {
+    public function renameManga()
+    {
         return rename($this->path . $this->manga_ep . ".zip", $this->path . $this->file_manga_name);
     }
 
-    final protected function saveImages() {
+    final protected function saveImages()
+    {
 
         $this->path = $this->path . $this->manga_name . "/";
         if (!is_dir($this->path)) {
@@ -146,7 +127,7 @@ var_dump($pageContent);die;
         if (is_array($this->images)) {
             foreach ($this->images as $k => $imagen) {
                 set_time_limit(0);
-                $page = ($k < 10) ? "0" . $k : $k;
+                $page    = ($k < 10) ? "0" . $k : $k;
                 $destino = $this->path . $page . ".jpg";
                 if (!$this->saveImage($imagen, $destino)) {
                     $this->write("<br/>Petada al guardar la imagen: " . $imagen);
@@ -159,12 +140,13 @@ var_dump($pageContent);die;
             }
             return true;
         } else {
-            $this->write("<br/>No se han encontrado imágenes o Jesulink.com ha tardado demasiado en contestar");
+            $this->write("<br/>No se han encontrado imágenes o la web ha tardado demasiado en contestar");
             return false;
         }
     }
 
-    final protected function saveImage($url, $destino) {
+    final protected function saveImage($url, $destino)
+    {
         if (!file_exists($destino)) {
             set_time_limit(0);
             $actual = $this->file_get_contents_curl($url);
@@ -178,5 +160,4 @@ var_dump($pageContent);die;
         $this->write($this->_messages['overwritting']);
         return true;
     }
-
 }

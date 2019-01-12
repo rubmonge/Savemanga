@@ -1,64 +1,34 @@
 <?php
 
-/**
- * Este fichero forma parte de la librería Savemanga
- * @category   Savemanga
- * @package    Savemanga_Jokerfansub
- * @author     Rubén Monge <rubenmonge@gmail.com>
- * @copyright  Copyright (c) 2011-2012 Rubén Monge. (http://www.rubenmonge.es/)
- */
-class Savemanga_Jokerfansub extends Savemanga
+class Savemanga_Readcomic extends Savemanga
 {
-    /*
-     * pattern manga: http://reader.jokerfansub.com/read/_one_piece/es/91/828/page/37 : 
-     * Where "_one_piece" == manga identifier (id)
-     * "828" = episode
-     * "37" = page
-     */
+    
 
-    protected $_pattern = "http://reader.jokerfansub.com/read/";
-    protected $_domain  = "http://reader.jokerfansub.com/";
+protected $_pattern = "https://read-comic.com/oblivion-song-007-2018/";
+protected $_patternImg ="https://3.bp.blogspot.com/-de3eIC3iJD4/W5x9_c9nhHI/AAAAAAACrVk/EDZp-4p15igkeRe5z3ZfYoyGm2cjJ-bwwCLcBGAs/s1600/073_003.jpg";
+protected $_domain = "https://read-comic.com";
 
     public function getManga($url)
     {
-        $pageContent = $this->file_get_contents_curl($url);
-
-        if (strlen($pageContent)) {
-
-            $this->setMangaID($url);
-            $this->setMangaNameAndEp($this->id);
-
-            $auxId        = explode('/', $this->id);
-            $auxId        = $auxId[0] . "/" . $auxId[1];
-            $patternImage = $this->_pattern . $auxId;
+        $dom = $this->getDom($url);
 
 
+        if ($dom) {
+            $this->setMangaNameAndEp($dom);
             $this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
-            libxml_use_internal_errors(true);
-            $dom     = DOMDocument::loadHTML($pageContent);
-            libxml_clear_errors();
-            $xp      = new DOMXPath($dom);
-            $options = $xp->query('//div[@class="tbtitle dropdown_parent dropdown_right"]/ul[@class="dropdown"]/li/a');
-            foreach ($options as $option) {
-                $value   = $option->getAttribute('href');
-                $links[] = $value;
-            }
 
-            ksort($links);
-            $links = array_unique($links);
-            $this->write($this->_messages['searching']);
-            foreach ($links as $k => $url) {
-                $url     = $this->file_get_contents_curl($url);
-                libxml_use_internal_errors(true);
-                $dom     = DOMDocument::loadHTML($url);
-                libxml_clear_errors();
-                $xp      = new DOMXPath($dom);
-                $options = $xp->query('//img[@class="open"]');
-                foreach ($options as $option) {
-                    $imgs[$k] = $option->getAttribute('src');
-                }
+			
+			$this->write($this->_messages['searching']);
+$aux = $dom->query('//div[contains(@class,"pinbin-copy")]/*/*/img');
+            foreach ($aux as  $imgUrl) {
+                $imgs[] = $imgUrl->getAttribute('src');
                 $this->write($this->_messages['processing']);
-            }
+			}            
+$aux = $dom->query('//div[contains(@class,"pinbin-copy")]/*/img');
+foreach ($aux as  $imgUrl) {
+$imgs[] = $imgUrl->getAttribute('src');
+$this->write($this->_messages['processing']);
+}
 
             $this->write("[" . count($imgs) . "]");
             $this->write($this->_messages['saving']);
@@ -72,45 +42,30 @@ class Savemanga_Jokerfansub extends Savemanga
         return false;
     }
 
-    public function setMangaID($url)
+    protected function setMangaID($url)
     {
-
-        $aux      = str_replace($this->_pattern, "", $url);
-        $aux      = explode("/", $aux);
-        $auxiliar = $aux[0];
-        $auxiliar = trim(str_replace("_", " ", $auxiliar));
-        $auxiliar = ucwords($auxiliar);
-        $auxiliar = str_replace(" ", "_", $auxiliar);
-        $this->id = $auxiliar . "/" . $aux[3];
-        if (count($aux) >= 6) {
-            $this->id = $auxiliar . "/" . $aux[3] . "_" . $aux[4];
-        }
+        return false;
     }
 
-    protected function setMangaNameAndEp($id)
+    protected function setMangaNameAndEp($dom)
     {
+		$aux = $dom->query('//div[contains(@class,"pinbin-category")]/p/a');
+		$this->manga_name = trim($aux[0]->nodeValue);
 
-        if (strlen(trim($id))) {
-            $aux              = explode("/", $id);
-            $name             = trim($aux[0]);
-            #$name = str_replace(" ", "_", ucwords(strtolower(str_replace("-", " ", $name))));
-            $this->manga_name = $name;
-            if (isset($aux[1]) && strpos($aux[1], "_")) {
-                $this->manga_ep = $aux[1];
-            } else {
-                $this->manga_ep = isset($aux[1]) ? intval($aux[1]) : 1;
-            }
+        $aux            = $dom->query('//h1');
+        $ep             = $aux[0]->nodeValue;
+        $ep             = explode("(", $ep);        
+        $this->manga_ep =(int) trim(str_replace($this->manga_name,"", $ep[0]));
 
-            if ($this->manga_ep < 10) {
-                $this->manga_ep = "00" . $this->manga_ep;
-            } else if ($this->manga_ep < 100) {
-                $this->manga_ep = "0" . $this->manga_ep;
-            }
-            $this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
-            return true;
-        }
+        if ($this->manga_ep < 10) {
+            $this->manga_ep = "00" . $this->manga_ep;
+        } else if ($this->manga_ep < 100) {
+            $this->manga_ep = "0" . $this->manga_ep;
+		}
+		$this->manga_name=str_replace(" ","_",ucwords($this->manga_name));
+		$this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
 
-        return false;
+        return true;
     }
 
     public function getSavedMangas()
@@ -187,7 +142,7 @@ class Savemanga_Jokerfansub extends Savemanga
             }
             return true;
         } else {
-            $this->write("<br/>No se han encontrado imágenes o Jokerfansub.com ha tardado demasiado en contestar");
+            $this->write("<br/>No se han encontrado imágenes o la web ha tardado demasiado en contestar");
             return false;
         }
     }
