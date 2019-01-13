@@ -20,28 +20,28 @@ require 'classes/Savemanga_Viewcomic.php';
 
 header('Content-Type: text/html; charset=utf-8');
 $htmlCode = "<style>"
-        ."body{"
-        . "background-color:black; "
-        . "color:green; "
-        . "font-size:14px; "
-        . "font-family:'Lucida Console', Monaco, monospace;"
-        . "}"
-        . "</style>";
+	. "body{"
+	. "background-color:black; "
+	. "color:green; "
+	. "font-size:14px; "
+	. "font-family:'Lucida Console', Monaco, monospace;"
+	. "}"
+	. "</style>";
 echo $htmlCode;
 $url = filter_input(INPUT_POST, 'url');
-if (!strlen(trim($url))){
-	$url = filter_input(INPUT_GET,'url');
+if (!strlen(trim($url))) {
+	$url = filter_input(INPUT_GET, 'url');
 }
 
-if (strlen(trim($url))) {	
-    $urls = explode("|", $url);
-    foreach ($urls as $url) {
-        $url = trim($url);
-        if (strlen($url)) {
-            $object = Savemanga_Factory::getInstanceOf($url);
-            $object->path = "mangas/";
-            $object->getManga($url);
-        }
-    }
+if (strlen(trim($url))) {
+	$urls = explode("|", $url);
+	foreach ($urls as $url) {
+		$url = trim($url);
+		if (strlen($url)) {
+			$object = Savemanga_Factory::getInstanceOf($url);
+			$object->path = "mangas/";
+			$object->getManga($url);
+		}
+	}
 }
 ?>
