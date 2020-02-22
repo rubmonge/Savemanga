@@ -1,27 +1,28 @@
 <?php
 
-class Savemanga_Tumangaonline extends Savemanga
+class Savemanga_Manganelo extends Savemanga
 {
 	/*
-     * pattern manga: https://tmofans.com/viewer/5c0a35b83fa33/paginated/2 : 
-     * Where "5c0a35b83fa33" == manga identifier (id)     
-     * "2" = page
+     * pattern manga: https://manganelo.com/chapter/gunnm_mars_chronicle/chapter_34.2: 
+https://manganelo.com/manga/read_kinnikuman_manga
+https://manganelo.com/manga/ranma_12
+
      */
 
-	protected $_pattern    = "https://tmofans.com/viewer/";
-	protected $_patternImg = "https://img1.tmofans.com/uploads/";
-	protected $_domain     = "https://tmofans.com";
+	protected $_pattern    = "https://manganelo.com/chapter/";
+	protected $_patternImg = "https://s5.mkklcdnv5.com/mangakakalot/g2/gunnm_mars_chronicle/vol7_chapter_342_kuan_and_erica_part_2/4.jpg";
+	protected $_domain     = "https://manganelo.com";
 
 	public function getManga($url)
 	{
 		$dom = $this->getDom($url);
 
-
 		if ($dom) {
 			$this->setMangaNameAndEp($dom);
+
 			$this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
 
-			$aux = $dom->query('//img[contains(@class,"viewer-image")]');
+			$aux = $dom->query('//div[contains(@class,"container-chapter-reader")]/img');
 
 			$this->write($this->_messages['searching']);
 			foreach ($aux as $k => $imgUrl) {
@@ -32,6 +33,7 @@ class Savemanga_Tumangaonline extends Savemanga
 			$this->write("[" . count($imgs) . "]");
 			$this->write($this->_messages['saving']);
 			$this->images = $imgs;
+
 			$this->saveImages();
 			$this->write("[" . count($imgs) . "]");
 			$this->zipManga();
@@ -48,10 +50,11 @@ class Savemanga_Tumangaonline extends Savemanga
 
 	protected function setMangaNameAndEp($dom)
 	{
-		$aux              = $dom->query('//h1');
-		$this->manga_name = str_replace([" ", ":"], ["_", ""], ucwords(trim($aux[0]->nodeValue)));
-		$aux            = $dom->query('//h2');
-		$this->manga_ep = preg_replace('/[^0-9\.]/', '', $aux[0]->nodeValue);
+		$aux = explode("chapter", strtolower($dom->query('//title')[0]->nodeValue));
+		$this->manga_name = str_replace([' ', ':'], '_', ucwords(trim($aux[0])));
+		$auxEp = explode(':', $aux[1]);
+		$this->manga_ep = number_format(trim($auxEp[0]), 2, '.', ',');
+
 		if ($this->manga_ep < 10) {
 			$this->manga_ep = "00" . $this->manga_ep;
 		} else if ($this->manga_ep < 100) {
@@ -116,7 +119,7 @@ class Savemanga_Tumangaonline extends Savemanga
 	final protected function saveImages()
 	{
 
-		$this->path = $this->path . $this->manga_name . "/";
+		$this->path = $this->path .  $this->manga_name . "/";
 		if (!is_dir($this->path)) {
 			mkdir($this->path, 0777);
 		}

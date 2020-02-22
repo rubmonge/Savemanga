@@ -1,24 +1,25 @@
 <?php
 
-class Savemanga_Tumangaonline extends Savemanga
+class Savemanga_Followmanga extends Savemanga
 {
 	/*
-     * pattern manga: https://tmofans.com/viewer/5c0a35b83fa33/paginated/2 : 
+     * pattern manga: https://followmanga.com/noticia/5d565847b0e01/cascade/1 : 
      * Where "5c0a35b83fa33" == manga identifier (id)     
      * "2" = page
+	 * https://img1.followmanga.com/uploads/5af6d430b9262/00_5a90867ef1151.jpg
      */
 
-	protected $_pattern    = "https://tmofans.com/viewer/";
-	protected $_patternImg = "https://img1.tmofans.com/uploads/";
-	protected $_domain     = "https://tmofans.com";
+	protected $_pattern    = "https://followmanga.com/noticia/";
+	protected $_patternImg = "https://img1.followmanga.com/uploads/";
+	protected $_domain     = "https://followmanga.com";
 
 	public function getManga($url)
 	{
-		$dom = $this->getDom($url);
-
-
+		$dom = $this->getDom($url, $this->_domain);
+		
 		if ($dom) {
 			$this->setMangaNameAndEp($dom);
+
 			$this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
 
 			$aux = $dom->query('//img[contains(@class,"viewer-image")]');

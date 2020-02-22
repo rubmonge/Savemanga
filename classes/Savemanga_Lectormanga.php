@@ -1,16 +1,16 @@
 <?php
 
-class Savemanga_Tumangaonline extends Savemanga
+class Savemanga_Lectormanga extends Savemanga
 {
 	/*
-     * pattern manga: https://tmofans.com/viewer/5c0a35b83fa33/paginated/2 : 
+     * pattern manga: https://lectormanga.com/viewer/5c0a35b83fa33/paginated/2 : 
      * Where "5c0a35b83fa33" == manga identifier (id)     
      * "2" = page
      */
 
-	protected $_pattern    = "https://tmofans.com/viewer/";
-	protected $_patternImg = "https://img1.tmofans.com/uploads/";
-	protected $_domain     = "https://tmofans.com";
+	protected $_pattern    = "https://lectormanga.com/viewer/";
+	protected $_patternImg = "https://img1.lectormanga.com/uploads/";
+	protected $_domain     = "https://lectormanga.com";
 
 	public function getManga($url)
 	{

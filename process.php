@@ -13,10 +13,14 @@ require 'classes/Savemanga_Submanga.php';
 require 'classes/Savemanga_Soulmanga.php';
 require 'classes/Savemanga_Sekaimanga.php';
 require 'classes/Savemanga_Tumangaonline.php';
+require 'classes/Savemanga_Lectormanga.php';
+require 'classes/Savemanga_Followmanga.php';
+require 'classes/Savemanga_Leomangas.php';
 require 'classes/Savemanga_Otakusmash.php';
 //require 'classes/Savemanga_Readcomics.php';
 require 'classes/Savemanga_Readcomic.php';
 require 'classes/Savemanga_Viewcomic.php';
+require 'classes/Savemanga_Manganelo.php';
 
 header('Content-Type: text/html; charset=utf-8');
 $htmlCode = "<style>"
@@ -44,4 +48,3 @@ if (strlen(trim($url))) {
 		}
 	}
 }
-?>

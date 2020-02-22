@@ -45,6 +45,15 @@ class Savemanga_Factory
 				$object = new Savemanga_Tumangaonline();
 				break;
 
+			case 'lectormanga.com':
+				$object = new Savemanga_Lectormanga();
+				break;
+			case 'followmanga.com':
+				$object = new Savemanga_Followmanga();
+				break;
+			case 'leomangas.com':
+				$object = new Savemanga_Leomangas();
+				break;
 			case 'soulmanga.net':
 				$object = new Savemanga_Soulmanga();
 				break;
@@ -69,6 +78,9 @@ class Savemanga_Factory
 			case 'fanfox.net':
 				$object = new Savemanga_Fanfox();
 				break;
+			case 'manganelo.com':
+				$object = new Savemanga_Manganelo();
+				break;
 		}
 
 		if (is_object($object)) {
@@ -76,5 +88,4 @@ class Savemanga_Factory
 		}
 		return false;
 	}
-
 }
