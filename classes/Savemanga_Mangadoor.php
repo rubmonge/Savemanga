@@ -1,34 +1,53 @@
 <?php
 
-class Savemanga_Tumangaonline extends Savemanga
+/**
+ * Este fichero forma parte de la librería Savemanga
+ * @category   Savemanga
+ * @package    Savemanga_Jokerfansub
+ * @author     Rubén Monge <rubenmonge@gmail.com>
+ * @copyright  Copyright (c) 2011-2012 Rubén Monge. (http://www.rubenmonge.es/)
+ */
+class Savemanga_Mangadoor extends Savemanga
 {
 	/*
-     * pattern manga: https://tmofans.com/viewer/5c0a35b83fa33/paginated/2 : 
-     * Where "5c0a35b83fa33" == manga identifier (id)     
+     * pattern manga: http://mangadoor.com/manga/shuumatsu-no-valkyrie/1/7 : 
+     * Where "one_piece" == manga identifier (id)
+     * "970" = episode
      * "2" = page
      */
 
-	protected $_pattern    = "https://lectortmo.com/viewer/";
-	protected $_patternImg = "https://img1.japanreader.com/uploads/";
-	protected $_domain     = "https://lectortmo.com";
+	protected $_pattern = "http://mangadoor.com/manga/";
+	protected $_domain  = "http://mangadoor.com/";
 
 	public function getManga($url)
 	{
-		$dom = $this->getDom($url);
+		$this->currentUrl = $url;
+		$pageContent = $this->file_get_contents_curl($url);
+		$pageContent = preg_replace('#<head(.*?)>(.*?)</head>#is', '', $pageContent);
+		$pageContent = preg_replace('#<ul(.*?)>(.*?)</ul>#is', '', $pageContent);
+		//$pageContent = mb_convert_encoding($pageContent, "Windows-1252", "UTF-8");
+		if (strlen($pageContent)) {
+
+			$this->setMangaID($url);
+			$this->setMangaNameAndEp($this->id);
+
+			$auxId        = explode('/', $this->id);
+			$auxId        = $auxId[0] . "/" . $auxId[1];
+			$patternImage = $this->_pattern . $auxId;
 
 
-		if ($dom) {
-			$this->setMangaNameAndEp($dom);
 			$this->write("<strong>Manga:</strong>" . $this->manga_name . " #" . $this->manga_ep);
-
-			$aux = $dom->query('//img[contains(@class,"viewer-img")]');
-
+			libxml_use_internal_errors(true);
+			$dom     = DOMDocument::loadHTML($pageContent);
+			libxml_clear_errors();
 			$this->write($this->_messages['searching']);
-			foreach ($aux as $k => $imgUrl) {
-				$imgs[$k] = $imgUrl->getAttribute('data-src');
-				$this->write($this->_messages['processing']);
+			$xp      = new DOMXPath($dom);
+			$options = $xp->query('//img[@class="img-responsive"]');
+			foreach ($options as $k => $option) {
+				$imgs[$k] = "http:/" . $option->getAttribute('data-src');
 			}
 
+			$this->write($this->_messages['processing']);
 			$this->write("[" . count($imgs) . "]");
 			$this->write($this->_messages['saving']);
 			$this->images = $imgs;
@@ -41,26 +60,42 @@ class Savemanga_Tumangaonline extends Savemanga
 		return false;
 	}
 
-	protected function setMangaID($url)
+	public function setMangaID($url)
 	{
-		return false;
+
+		$aux      = str_replace($this->_pattern, "", $url);
+		$aux      = explode("/", $aux);
+		$auxiliar = $aux[0];
+		$auxiliar = trim(str_replace(["_", "-"], " ", $auxiliar));
+		$auxiliar = ucwords($auxiliar);
+		$auxiliar = str_replace(" ", "_", $auxiliar);
+
+		$this->id = $auxiliar . "/" . $aux[1];
 	}
 
-	protected function setMangaNameAndEp($dom)
+	protected function setMangaNameAndEp($id)
 	{
-		$aux              = $dom->query('//h1');
-		$this->manga_name = str_replace([" ", ":"], ["_", ""], ucwords(trim($aux[0]->nodeValue)));
-		$aux            = $dom->query('//h2');
-		$this->manga_ep = preg_replace('/[^0-9\.]/', '', $aux[0]->nodeValue);
-		if ($this->manga_ep < 10) {
-			$this->manga_ep = "00" . $this->manga_ep;
-		} else if ($this->manga_ep < 100) {
-			$this->manga_ep = "0" . $this->manga_ep;
+
+		if (strlen(trim($id))) {
+			$aux              = explode("/", $id);
+			$name             = trim($aux[0]);
+			$this->manga_name = $name;
+			if (isset($aux[1]) && strpos($aux[1], "_")) {
+				$this->manga_ep = $aux[1];
+			} else {
+				$this->manga_ep = isset($aux[1]) ? intval($aux[1]) : 1;
+			}
+
+			if ($this->manga_ep < 10) {
+				$this->manga_ep = "00" . $this->manga_ep;
+			} else if ($this->manga_ep < 100) {
+				$this->manga_ep = "0" . $this->manga_ep;
+			}
+			$this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
+			return true;
 		}
 
-		$this->file_manga_name = $this->manga_name . "_" . $this->manga_ep . ".cbr";
-
-		return true;
+		return false;
 	}
 
 	public function getSavedMangas()
@@ -126,7 +161,7 @@ class Savemanga_Tumangaonline extends Savemanga
 				set_time_limit(0);
 				$page    = ($k < 10) ? "0" . $k : $k;
 				$destino = $this->path . $page . ".jpg";
-				if (!$this->saveImage($imagen, $destino)) {
+				if (!$this->saveImage(trim($imagen), $destino)) {
 					$this->write("<br/>Petada al guardar la imagen: " . $imagen);
 					return false;
 				}
@@ -137,7 +172,7 @@ class Savemanga_Tumangaonline extends Savemanga
 			}
 			return true;
 		} else {
-			$this->write("<br/>No se han encontrado imágenes o la web ha tardado demasiado en contestar");
+			$this->write("<br/>No se han encontrado imágenes o Jokerfansub.com ha tardado demasiado en contestar");
 			return false;
 		}
 	}
@@ -146,7 +181,7 @@ class Savemanga_Tumangaonline extends Savemanga
 	{
 		if (!file_exists($destino)) {
 			set_time_limit(0);
-			$actual = $this->file_get_contents_curl($url);
+			$actual = $this->file_get_contents_curl(trim($url), $this->currentUrl);
 			if (strlen(trim($actual))) {
 				file_put_contents($destino, $actual);
 				$this->write($this->_messages['processing']);

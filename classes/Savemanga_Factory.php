@@ -41,7 +41,7 @@ class Savemanga_Factory
 				$object = new Savemanga_Submanga();
 				break;
 
-			case 'tmofans.com':
+			case 'lectortmo.com':
 				$object = new Savemanga_Tumangaonline();
 				break;
 
@@ -80,6 +80,9 @@ class Savemanga_Factory
 				break;
 			case 'manganelo.com':
 				$object = new Savemanga_Manganelo();
+				break;
+			case 'mangadoor.com':
+				$object = new Savemanga_Mangadoor();
 				break;
 		}
 
